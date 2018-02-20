@@ -8,7 +8,7 @@
 class testCFSTd : public UniaxialMaterial
 {
 public:
-    testCFSTd(int tag, double E, double f1, double f2, double b1, double b2, double revRatio, double dFactor);
+    testCFSTd(int tag, double E, double f1, double f2, double b1, double b2, double revRatio, double Dfactor, double Efactor, double Rfactor);
     testCFSTd();
     ~testCFSTd();
     UniaxialMaterial *getCopy(void);

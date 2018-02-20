@@ -33,7 +33,7 @@ OPS_Export void *OPS_testCFSTd()
     //
 
     int    iData[1];
-    double dData[7];
+    double dData[9];
     int numData;
     numData = 1;
     if (OPS_GetIntInput(&numData, iData) != 0) {
@@ -41,9 +41,9 @@ OPS_Export void *OPS_testCFSTd()
         return 0;
     }
 
-    numData = 7;
+    numData = 9;
     if (OPS_GetDoubleInput(&numData, dData) != 0) {
-        opserr << "WARNING invalid E & f1 & f2 & b1 & b2 & revRatio & dFactor\n";
+        opserr << "WARNING invalid E & f1 & f2 & b1 & b2 & revRatio & dFactor & Efactor & Rfactor\n";
         return 0;
     }
 
@@ -51,7 +51,7 @@ OPS_Export void *OPS_testCFSTd()
     // create a new material
     //
 
-    theMaterial = new testCFSTd(iData[0], dData[0], dData[1], dData[2], dData[3], dData[4], dData[5], dData[6]);
+    theMaterial = new testCFSTd(iData[0], dData[0], dData[1], dData[2], dData[3], dData[4], dData[5], dData[6], dData[7], dData[8]);
 
     if (theMaterial == 0) {
         opserr << "WARNING could not create uniaxialMaterial of type testCFSTd\n";
@@ -63,9 +63,9 @@ OPS_Export void *OPS_testCFSTd()
 }
 
 
-testCFSTd::testCFSTd(int tag, double E, double f1, double f2, double b1, double b2, double revRatio, double dFactor):UniaxialMaterial(tag, 0)
+testCFSTd::testCFSTd(int tag, double E, double f1, double f2, double b1, double b2, double revRatio, double Dfactor, double Efactor, double Rfactor):UniaxialMaterial(tag, 0)
 {
-    this->curMat = matCFSTd(E, f1, f2, b1, b2, revRatio, dFactor);
+    this->curMat = matCFSTd(E, f1, f2, b1, b2, revRatio, Dfactor, Efactor, Rfactor);
 }
 
 
@@ -130,7 +130,7 @@ int testCFSTd::revertToStart(void)
 
 UniaxialMaterial *testCFSTd::getCopy(void)
 {
-    testCFSTd *theCopy = new testCFSTd(this->getTag(), this->curMat.E_ini, this->curMat.f1, this->curMat.f2, this->curMat.b1, this->curMat.b2, this->curMat.revRatio, this->curMat.dFactor);
+    testCFSTd *theCopy = new testCFSTd(this->getTag(), this->curMat.E_ini, this->curMat.f1, this->curMat.f2, this->curMat.b1, this->curMat.b2, this->curMat.revRatio, this->curMat.Dfactor, this->curMat.Efactor, this->curMat.Rfactor);
     theCopy->curMat = this->curMat;
     //opserr << this->i << endln;
     return theCopy;

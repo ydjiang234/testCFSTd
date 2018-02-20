@@ -10,7 +10,7 @@
 class matCFSTd
 {
 public:
-    matCFSTd(double E, double f1, double f2, double b1, double b2, double revRatio, double dFactor);
+    matCFSTd(double E, double f1, double f2, double b1, double b2, double revRatio, double Dfactor, double Efactor, double Rfactor);
     matCFSTd();
     ~matCFSTd();
 
@@ -20,13 +20,11 @@ public:
     void reset();
 
 
-    double E_ini, f1, f2, b1, b2, revRatio, dFactor;
-    double Ystrain;
+    double E_ini, f1, f2, b1, b2, revRatio, Dfactor, Efactor, Rfactor;
     double E, strain, stress;
-    double stressOri, stressOri_next;
     double E_next, strain_next, stress_next;
-    double strainCum, strainCum_next;
-    bool isDet, isDet_next;
+
+
 
 
 
@@ -41,6 +39,13 @@ private:
     TriBackbone BB;
     unLoadPath1 LP1, LP1_next;
     unLoadPath2 LP2, LP2_next;
+
+    double stressOri, stressOri_next;
+    double strainCum, strainCum_next;
+    double Ystrain;
+    bool isDet, isDet_next;
+    double EDet, RevRatioDet;
+    void updateERevRatio();
 };
 
 #endif

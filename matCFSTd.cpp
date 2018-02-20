@@ -5,7 +5,7 @@
 #include <iostream>
 #include <vector>
 
-matCFSTd::matCFSTd(double E, double f1, double f2, double b1, double b2, double revRatio, double dFactor)
+matCFSTd::matCFSTd(double E, double f1, double f2, double b1, double b2, double revRatio, double Dfactor, double Efactor, double Rfactor)
 {
     this->E_ini = E;
     this->f1 = f1;
@@ -13,12 +13,16 @@ matCFSTd::matCFSTd(double E, double f1, double f2, double b1, double b2, double 
     this->b1 = b1;
     this->b2 = b2;
     this->revRatio = revRatio;
-    this->dFactor = dFactor;
+    this->Dfactor = Dfactor;
+    this->Efactor = Efactor;
+    this->Rfactor = Rfactor;
 
     this->isDet = false;
     this->isDet_next = false;
     
     this->E = this->E_ini;
+    this->EDet = this->E_ini;
+    this->RevRatioDet = this->revRatio;
     this->Ystrain = this->f1 / this->E_ini;
 
     this->E_next = this->E;
@@ -51,15 +55,15 @@ void matCFSTd::nextStress(double strain)
         nextLP = curLP;
     } else if (this->nextCondition == 1) {
         //1 - new LP1
-        this->LP1_next = this->BB.unload(curLP->curX, curLP->curY, this->E_ini, this->f1 * this->revRatio);
+        this->LP1_next = this->BB.unload(curLP->curX, curLP->curY, this->EDet, this->f1 * this->RevRatioDet);
         nextLP = &this->LP1_next;
     } else if (this->nextCondition == 21) {
         //21 - new LP2 from LP1
-        this->LP2_next = this->LP1.unload(curLP->curX, curLP->curY, this->E_ini, this->f1 * this->revRatio);
+        this->LP2_next = this->LP1.unload(curLP->curX, curLP->curY, this->EDet, this->f1 * this->RevRatioDet);
         nextLP = &this->LP2_next;
     } else if (this->nextCondition == 22) {
         //22 - new LP2 from LP2
-        this->LP2_next = this->LP2.unload(curLP->curX, curLP->curY, this->E_ini, this->f1 * this->revRatio);
+        this->LP2_next = this->LP2.unload(curLP->curX, curLP->curY, this->EDet, this->f1 * this->RevRatioDet);
         nextLP = &this->LP2_next;
     } else if (this->nextCondition == 3) {
         //3 - back to BB
@@ -133,6 +137,7 @@ void matCFSTd::next()
     curLP->back2Path(this->strain_next);
 
     this->getDataFromPath();
+    this->updateERevRatio();
 }
 
 void matCFSTd::revertToLast()
@@ -151,6 +156,8 @@ void matCFSTd::reset()
 {
     this->isDet = false;
     this->isDet_next = false;
+    this->EDet = this->E_ini;
+    this->RevRatioDet = this->revRatio;
 
     this->E = this->E_ini;
     this->Ystrain = this->f1 / this->E_ini;
@@ -224,9 +231,20 @@ generalPath* matCFSTd::getCurLP()
 double matCFSTd::stressD(double strainCum, double stress)
 {
     double out, factor;
-    factor = 1 - strainCum/ this->Ystrain * this->dFactor;
+    factor = 1 - strainCum/ this->Ystrain * this->Dfactor;
     if (factor <= 0)
         factor = DBL_EPSILON;
     out = stress * factor;
     return out;
+}
+
+void matCFSTd::updateERevRatio()
+{
+    double Eratio, Rratio;
+    Eratio = 1 - strainCum/ this->Ystrain * this->Efactor;
+    Rratio = 1 - strainCum/ this->Ystrain * this->Rfactor;
+    if (Eratio <= 0) {Eratio = DBL_EPSILON;}
+    if (Rratio <= 0) {Rratio = DBL_EPSILON;}
+    this->EDet = this->E_ini * Eratio;
+    this->RevRatioDet = this->revRatio * Rratio;
 }
