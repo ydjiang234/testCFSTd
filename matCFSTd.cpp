@@ -1,11 +1,11 @@
-#include "matCFST.h"
+#include "matCFSTd.h"
 #include "tribackbone.h"
 #include "unLoadPath1.h"
 #include "unLoadPath2.h"
 #include <iostream>
 #include <vector>
 
-matCFST::matCFST(double E, double f1, double f2, double b1, double b2, double revRatio)
+matCFSTd::matCFSTd(double E, double f1, double f2, double b1, double b2, double revRatio, double dFactor)
 {
     this->E_ini = E;
     this->f1 = f1;
@@ -13,23 +13,31 @@ matCFST::matCFST(double E, double f1, double f2, double b1, double b2, double re
     this->b1 = b1;
     this->b2 = b2;
     this->revRatio = revRatio;
+    this->dFactor = dFactor;
     
     this->E = this->E_ini;
+    this->Ystrain = this->f1 / this->E_ini;
+
     this->E_next = this->E;
     this->strain = 0;
     this->strain_next = 0;
     this->stress = 0;
     this->stress_next = 0;
-    this->nextCondition = -1;
+    this->nextCondition = 0;
+
+    this->stressOri = 0;
+    this->stressOri_next = 0;
+    this->strainCum = 0;
+    this->strainCum_next = 0;
     
     this->initial();
 }
 
-matCFST::matCFST() {}
+matCFSTd::matCFSTd() {}
 
-matCFST::~matCFST() {}
+matCFSTd::~matCFSTd() {}
 
-void matCFST::nextStress(double strain)
+void matCFSTd::nextStress(double strain)
 {
     generalPath *curLP, *nextLP;
     curLP = this->getCurLP();
@@ -56,8 +64,10 @@ void matCFST::nextStress(double strain)
     }
 
     this->strain_next = strain;
-    this->stress_next = nextLP->getY(strain);
-    this->E_next = nextLP->getE(strain);
+    this->strainCum_next = this->strainCum + std::abs(this->strain_next - curLP->curX);
+    this->stressOri_next = nextLP->getY(strain);
+    this->stress_next = this->stressD(this->strainCum, this->stressOri_next);
+    this->E_next = (this->strain_next - this->stress) / (this->strain_next - this->strain);
     //std::cout<<this->nextCondition<<std::endl;
     //std::cout<<(curLP==nextLP)<<std::endl;
     //std::cout<<curLP->xdata.size()<<std::endl;
@@ -70,7 +80,7 @@ void matCFST::nextStress(double strain)
     //std::cout<<std::endl;
 }
 
-void matCFST::next()
+void matCFSTd::next()
 {
     generalPath *curLP;
     if (this->BB.isOnPath) {
@@ -101,35 +111,44 @@ void matCFST::next()
     this->BB.isOnPath = false;
     this->LP1.isOnPath = false;
     this->LP2.isOnPath = false;
+    this->strainCum = this->strainCum_next;
     curLP->back2Path(this->strain_next);
 
     this->getDataFromPath();
 }
 
-void matCFST::revertToLast()
+void matCFSTd::revertToLast()
 {
     this->E_next = this->E;
     this->strain_next = this->strain;
     this->stress_next = this->stress;
     this->nextCondition = 0;
+
+    this->strainCum_next = this->strainCum;
+    this->stressOri_next = this->stressOri;
 }
 
-void matCFST::reset()
+void matCFSTd::reset()
 {
     this->E = this->E_ini;
     this->E_next = this->E;
+    this->Ystrain = this->f1 / this->E_ini;
     this->strain = 0;
     this->strain_next = 0;
     this->stress = 0;
     this->stress_next = 0;
     this->nextCondition = 0;
+    this->strainCum = 0;
+    this->strainCum_next = 0;
+    this->stressOri = 0;
+    this->stressOri_next = 0;
     this->LP1 = unLoadPath1();
     this->LP2 = unLoadPath2();
     this->BB = TriBackbone();
     this->initial();
 }
 
-void matCFST::initial()
+void matCFSTd::initial()
 {
 
     double tempx1, tempx2;
@@ -157,15 +176,15 @@ void matCFST::initial()
 
 }
 
-void matCFST::getDataFromPath()
+void matCFSTd::getDataFromPath()
 {
     generalPath *curLP = this->getCurLP();
     this->strain = curLP->curX;
-    this->stress = curLP->curY;
+    this->stress = this->stressD(this->strainCum, curLP->curY);
     this->E = curLP->curE();
 }
 
-generalPath* matCFST::getCurLP()
+generalPath* matCFSTd::getCurLP()
 {
     generalPath *curLP;
     if (this->BB.isOnPath) {
@@ -176,4 +195,14 @@ generalPath* matCFST::getCurLP()
         curLP = &this->LP2;
     }
     return curLP;
+}
+
+double matCFSTd::stressD(double strainCum, double stress)
+{
+    double out, factor;
+    factor = 1 - strainCum/ this->Ystrain * this->dFactor;
+    if (factor <= 0)
+        factor = DBL_EPSILON;
+    out = stress * factor;
+    return out;
 }

@@ -1,28 +1,28 @@
 #include <elementAPI.h>
-#include "testCFST.h"
+#include "testCFSTd.h"
 #include <Vector.h>
 #include <Channel.h>
 #include <math.h>
 #include <float.h>
-#include "matCFST.h"
+#include "matCFSTd.h"
 
-//#ifdef _USRDLL
+#ifdef _USRDLL
 #define OPS_Export extern "C" _declspec(dllexport)
-//#elif _MACOSX
-//#define OPS_Export extern "C" __attribute__((visibility("default")))
-//#else
-//#define OPS_Export extern "C"
-//#endif
+#elif _MACOSX
+#define OPS_Export extern "C" __attribute__((visibility("default")))
+#else
+#define OPS_Export extern "C"
+#endif
 
 
-static int numtestCFST = 0;
+static int numtestCFSTd = 0;
 
-OPS_Export void *OPS_testCFST()
+OPS_Export void *OPS_testCFSTd()
 {
     // print out some KUDO's
-    if (numtestCFST == 0) {
-        opserr << "testCFST uniaxial material - Written by Yadong Jiang\n";
-        numtestCFST = 1;
+    if (numtestCFSTd == 0) {
+        opserr << "testCFSTd uniaxial material - Written by Yadong Jiang\n";
+        numtestCFSTd = 1;
     }
 
     // Pointer to a uniaxial material that will be returned
@@ -33,17 +33,17 @@ OPS_Export void *OPS_testCFST()
     //
 
     int    iData[1];
-    double dData[6];
+    double dData[7];
     int numData;
     numData = 1;
     if (OPS_GetIntInput(&numData, iData) != 0) {
-        opserr << "WARNING invalid uniaxialMaterial testCFST tag" << endln;
+        opserr << "WARNING invalid uniaxialMaterial testCFSTd tag" << endln;
         return 0;
     }
 
-    numData = 6;
+    numData = 7;
     if (OPS_GetDoubleInput(&numData, dData) != 0) {
-        opserr << "WARNING invalid E & f1 & f2 & b1 & b2 & revRatio\n";
+        opserr << "WARNING invalid E & f1 & f2 & b1 & b2 & revRatio & dFactor\n";
         return 0;
     }
 
@@ -51,10 +51,10 @@ OPS_Export void *OPS_testCFST()
     // create a new material
     //
 
-    theMaterial = new testCFST(iData[0], dData[0], dData[1], dData[2], dData[3], dData[4], dData[5]);
+    theMaterial = new testCFSTd(iData[0], dData[0], dData[1], dData[2], dData[3], dData[4], dData[5], dData[6]);
 
     if (theMaterial == 0) {
-        opserr << "WARNING could not create uniaxialMaterial of type testCFST\n";
+        opserr << "WARNING could not create uniaxialMaterial of type testCFSTd\n";
         return 0;
     }
 
@@ -63,22 +63,22 @@ OPS_Export void *OPS_testCFST()
 }
 
 
-testCFST::testCFST(int tag, double E, double f1, double f2, double b1, double b2, double revRatio):UniaxialMaterial(tag, 0)
+testCFSTd::testCFSTd(int tag, double E, double f1, double f2, double b1, double b2, double revRatio, double dFactor):UniaxialMaterial(tag, 0)
 {
-    this->curMat = matCFST(E, f1, f2, b1, b2, revRatio);
+    this->curMat = matCFSTd(E, f1, f2, b1, b2, revRatio, dFactor);
 }
 
 
-testCFST::testCFST() :UniaxialMaterial(0, 0)
+testCFSTd::testCFSTd() :UniaxialMaterial(0, 0)
 {
 }
 
-testCFST::~testCFST()
+testCFSTd::~testCFSTd()
 {
     //do nothing here
 }
 
-int testCFST::setTrialStrain(double strain, double strainRate)
+int testCFSTd::setTrialStrain(double strain, double strainRate)
 {
     if (fabs(strain - this->curMat.strain) < DBL_EPSILON)
     {
@@ -89,54 +89,54 @@ int testCFST::setTrialStrain(double strain, double strainRate)
     }
 }
 
-double testCFST::getStrain(void)
+double testCFSTd::getStrain(void)
 {
     return this->curMat.strain_next;
 }
 
-double testCFST::getStress(void)
+double testCFSTd::getStress(void)
 {
     return this->curMat.stress_next;
 }
 
-double testCFST::getTangent(void)
+double testCFSTd::getTangent(void)
 {
     return this->curMat.E_next;
 }
 
-double testCFST::getInitialTangent(void)
+double testCFSTd::getInitialTangent(void)
 {
     return this->curMat.E_ini;
 }
 
-int testCFST::commitState(void)
+int testCFSTd::commitState(void)
 {
     this->curMat.next();
     return 0;
 }
 
-int testCFST::revertToLastCommit(void)
+int testCFSTd::revertToLastCommit(void)
 {
 
     this->curMat.revertToLast();
     return 0;
 }
 
-int testCFST::revertToStart(void)
+int testCFSTd::revertToStart(void)
 {
     this->curMat.reset();
     return 0;
 }
 
-UniaxialMaterial *testCFST::getCopy(void)
+UniaxialMaterial *testCFSTd::getCopy(void)
 {
-    testCFST *theCopy = new testCFST(this->getTag(), this->curMat.E_ini, this->curMat.f1, this->curMat.f2, this->curMat.b1, this->curMat.b2, this->curMat.revRatio);
+    testCFSTd *theCopy = new testCFSTd(this->getTag(), this->curMat.E_ini, this->curMat.f1, this->curMat.f2, this->curMat.b1, this->curMat.b2, this->curMat.revRatio, this->curMat.dFactor);
     theCopy->curMat = this->curMat;
     //opserr << this->i << endln;
     return theCopy;
 }
 
-int testCFST::sendSelf(int commitTag, Channel &theChannel)
+int testCFSTd::sendSelf(int commitTag, Channel &theChannel)
 {
     int res = 0;
     /*
@@ -145,18 +145,18 @@ int testCFST::sendSelf(int commitTag, Channel &theChannel)
     data(1) = this->curMat;
     res = theChannel.sendVector(this->getDbTag(), commitTag, data);
     if (res < 0)
-        opserr << "testCFST::sendSelf() - failed to send data\n";
+        opserr << "testCFSTd::sendSelf() - failed to send data\n";
     */
     return res;
 }
-int testCFST::recvSelf(int commitTag, Channel &theChannel, FEM_ObjectBroker &theBroker)
+int testCFSTd::recvSelf(int commitTag, Channel &theChannel, FEM_ObjectBroker &theBroker)
 {
     int res = 0;
     /*
     static Vector data(2);
     res = theChannel.recvVector(this->getDbTag(), commitTag, data);
     if (res < 0) {
-        opserr << "testCFST::recvSelf() - failed to receive data\n";
+        opserr << "testCFSTd::recvSelf() - failed to receive data\n";
     }
     else {
         this->setTag(data(0));
@@ -166,9 +166,9 @@ int testCFST::recvSelf(int commitTag, Channel &theChannel, FEM_ObjectBroker &the
     return res;
 }
 
-void testCFST::Print(OPS_Stream &s, int flag)
+void testCFSTd::Print(OPS_Stream &s, int flag)
 {
-    s << "testCFST tag: " << this->getTag() << endln;
+    s << "testCFSTd tag: " << this->getTag() << endln;
 }
 
 

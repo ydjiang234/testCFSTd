@@ -1,16 +1,16 @@
-#ifndef testCFST_h
-#define testCFST_h
+#ifndef testCFSTd_h
+#define testCFSTd_h
 
 
 #include <UniaxialMaterial.h>
-#include "matCFST.h"
+#include "matCFSTd.h"
 
-class testCFST : public UniaxialMaterial
+class testCFSTd : public UniaxialMaterial
 {
 public:
-    testCFST(int tag, double E, double f1, double f2, double b1, double b2, double revRatio);
-    testCFST();
-    ~testCFST();
+    testCFSTd(int tag, double E, double f1, double f2, double b1, double b2, double revRatio, double dFactor);
+    testCFSTd();
+    ~testCFSTd();
     UniaxialMaterial *getCopy(void);
 
     int setTrialStrain(double strain, double strainRate = 0);
@@ -34,10 +34,10 @@ public:
 protected:
 
 private:
-    matCFST curMat;
+    matCFSTd curMat;
 
 };
 
 
 
-#endif // !testCFST_h
+#endif // !testCFSTd_h

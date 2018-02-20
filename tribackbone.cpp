@@ -20,6 +20,9 @@ unLoadPath1 TriBackbone::unload(double x, double y, double curE, double curRev)
     int tempDirection;
     if (this->isLinear(x) == false)
     {
+        if (std::abs(y) <= curRev)
+            curRev = std::abs(y);
+
         if (x > 0) {
             Rev = -1 * curRev;
             tempDirection = -1;
@@ -28,15 +31,15 @@ unLoadPath1 TriBackbone::unload(double x, double y, double curE, double curRev)
             tempDirection = 1;
         }
         tempx1 = x - (y - Rev) / curE;
+
+        if (x > 0) {
+                tempxdata = {-x, tempx1, x};
+                tempydata = {-y, Rev, y};
+            } else {
+                tempxdata = {x, tempx1, -x};
+                tempydata = {y, Rev, -y};
+            }
     }
-    
-    if (x > 0) {
-            tempxdata = {-x, tempx1, x};
-            tempydata = {-y, Rev, y};
-        } else {
-            tempxdata = {x, tempx1, -x};
-            tempydata = {y, Rev, -y};
-        }
     
     return unLoadPath1(tempxdata, tempydata, tempDirection);
 }
