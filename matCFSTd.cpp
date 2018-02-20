@@ -14,6 +14,9 @@ matCFSTd::matCFSTd(double E, double f1, double f2, double b1, double b2, double 
     this->b2 = b2;
     this->revRatio = revRatio;
     this->dFactor = dFactor;
+
+    this->isDet = false;
+    this->isDet_next = false;
     
     this->E = this->E_ini;
     this->Ystrain = this->f1 / this->E_ini;
@@ -64,7 +67,20 @@ void matCFSTd::nextStress(double strain)
     }
 
     this->strain_next = strain;
-    this->strainCum_next = this->strainCum + std::abs(this->strain_next - curLP->curX);
+    this->stressOri_next = nextLP->getY(strain);
+
+    if (this->isDet == false) {
+        if (nextLP != &this->BB) {
+            this->isDet_next = true;
+        }
+    }
+
+    if (this->isDet_next) {
+        this->strainCum_next = this->strainCum + std::abs(this->strain_next - curLP->curX);
+    } else {
+        this->strainCum_next = 0;
+    }
+
     this->stressOri_next = nextLP->getY(strain);
     this->stress_next = this->stressD(this->strainCum, this->stressOri_next);
     this->E_next = (this->strain_next - this->stress) / (this->strain_next - this->strain);
@@ -108,10 +124,12 @@ void matCFSTd::next()
         curLP = &this->BB;
     }
 
+
     this->BB.isOnPath = false;
     this->LP1.isOnPath = false;
     this->LP2.isOnPath = false;
     this->strainCum = this->strainCum_next;
+    this->isDet = this->isDet_next;
     curLP->back2Path(this->strain_next);
 
     this->getDataFromPath();
@@ -126,22 +144,28 @@ void matCFSTd::revertToLast()
 
     this->strainCum_next = this->strainCum;
     this->stressOri_next = this->stressOri;
+    this->isDet_next = this->isDet;
 }
 
 void matCFSTd::reset()
 {
+    this->isDet = false;
+    this->isDet_next = false;
+
     this->E = this->E_ini;
-    this->E_next = this->E;
     this->Ystrain = this->f1 / this->E_ini;
+
+    this->E_next = this->E;
     this->strain = 0;
     this->strain_next = 0;
     this->stress = 0;
     this->stress_next = 0;
     this->nextCondition = 0;
-    this->strainCum = 0;
-    this->strainCum_next = 0;
+
     this->stressOri = 0;
     this->stressOri_next = 0;
+    this->strainCum = 0;
+    this->strainCum_next = 0;
     this->LP1 = unLoadPath1();
     this->LP2 = unLoadPath2();
     this->BB = TriBackbone();
@@ -150,7 +174,6 @@ void matCFSTd::reset()
 
 void matCFSTd::initial()
 {
-
     double tempx1, tempx2;
     double tempy1, tempy2;
     double x_ult, y_ult;
@@ -158,6 +181,7 @@ void matCFSTd::initial()
     tempy1 = this->f1;
     tempx2 = tempx1 + (this->f2 - this->f1) / (this->b1 * this->E_ini);
     tempy2 = this->f2;
+
     if (this->b2 < 0)
     {
         x_ult = tempx2 - this->f2 / (this->b2 * this->E_ini);

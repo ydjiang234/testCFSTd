@@ -26,6 +26,8 @@ public:
     double stressOri, stressOri_next;
     double E_next, strain_next, stress_next;
     double strainCum, strainCum_next;
+    bool isDet, isDet_next;
+
 
 
     
@@ -33,7 +35,7 @@ private:
     void initial();
     void getDataFromPath();
     unsigned int nextCondition;
-    double stressD(double strain, double stress);
+    double stressD(double strainCum, double stress);
     generalPath* getCurLP();
 
     TriBackbone BB;
